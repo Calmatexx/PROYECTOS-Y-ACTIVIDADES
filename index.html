@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Futurista - Fernando</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cyan: #00f2ff;
+            --magenta: #ff00aa;
+            --deep-blue: #0a0028;
+            --glass: rgba(15, 15, 45, 0.35);
+            --glow-cyan: 0 0 30px rgba(0, 242, 255, 0.7);
+            --glow-magenta: 0 0 30px rgba(255, 0, 170, 0.7);
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #1a0033, #000011);
+            color: #e0f8ff;
+            font-family: 'Exo 2', sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            padding: 3rem 2rem;
+            text-align: center;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--cyan);
+            box-shadow: var(--glow-cyan);
+        }
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            margin: 0;
+            background: linear-gradient(90deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 242, 255, 0.8);
+        }
+        #search-container {
+            margin: 2rem auto;
+            max-width: 700px;
+        }
+        #search {
+            width: 100%;
+            padding: 1.2rem 2rem;
+            font-size: 1.3rem;
+            background: var(--glass);
+            border: 2px solid transparent;
+            border-radius: 50px;
+            color: white;
+            outline: none;
+            box-shadow: var(--glow-cyan);
+            transition: all 0.4s;
+        }
+        #search:focus {
+            box-shadow: var(--glow-magenta);
+        }
+        .layout {
+            flex: 1;
+            display: flex;
+            gap: 2.5rem;
+            padding: 0 3rem 3rem;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        .sidebar {
+            flex: 0 0 420px;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            overflow-y: auto;
+            padding-right: 1rem;
+        }
+        .viewer-container {
+            flex: 1;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: var(--glow-cyan);
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #000011;
+        }
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--glow-cyan);
+            transition: all 0.4s ease;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            padding: 2px;
+            background: linear-gradient(45deg, var(--cyan), var(--magenta), var(--cyan));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.6;
+        }
+        .card:hover::before {
+            opacity: 1;
+        }
+        .card h2 {
+            margin-top: 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .items-list {
+            min-height: 50px;
+        }
+        .item {
+            padding: 1rem 0;
+            border-bottom: 1px dashed rgba(0, 242, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .item:hover {
+            text-shadow: var(--glow-cyan);
+        }
+        .item a, .item span {
+            color: var(--cyan);
+            text-decoration: none;
+            flex: 1;
+            display: block;
+            transition: all 0.3s;
+        }
+        .item a:hover {
+            color: var(--magenta);
+            text-shadow: var(--glow-magenta);
+        }
+        .delete-btn {
+            color: #ff0066;
+            cursor: pointer;
+            font-size: 1.4rem;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .delete-btn:hover {
+            opacity: 1;
+        }
+        .add-section {
+            display: flex;
+            gap: 10px;
+            margin-top: 1.5rem;
+        }
+        .add-section input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid var(--cyan);
+            border-radius: 12px;
+            color: white;
+            outline: none;
+        }
+        .add-section input:focus {
+            box-shadow: var(--glow-cyan);
+        }
+        .add-section button {
+            padding: 0 1.5rem;
+            background: rgba(0, 242, 255, 0.2);
+            border: 1px solid var(--cyan);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+        .add-section button:hover {
+            background: rgba(0, 242, 255, 0.4);
+            box-shadow: var(--glow-cyan);
+        }
+        footer {
+            padding: 1.5rem;
+            text-align: center;
+            opacity: 0.7;
+        }
+        @media (max-width: 1100px) {
+            .layout { flex-direction: column; }
+            .sidebar { flex: none; }
+            .viewer-container { height: 70vh; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Dashboard Futurista - Fernando</h1>
+    </header>
+
+    <div id="search-container">
+        <input type="text" id="search" placeholder="Buscar proyectos, tareas o enlaces...">
+    </div>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="card" id="proyectos">
+                <h2>Proyectos</h2>
+                <div class="items-list"></div>
+                <div class="add-section">
+                    <input type="text" class="add-name" placeholder="Nombre del proyecto">
+                    <input type="text" class="add-url" placeholder="URL o archivo.html">
+                    <button class="add-submit">+</button>
+                </div>
+            </div>
+
+            <div class="card" id="tareas">
+                <h2>Tareas</h2>
+                <div class="items-list"></div>
+                <div class="add-section">
+                    <input type="text" class="add-name" placeholder="Nueva tarea">
+                    <input type="text" class="add-url" placeholder="URL (opcional)">
+                    <button class="add-submit">+</button>
+                </div>
+            </div>
+
+            <div class="card" id="enlaces">
+                <h2>Enlaces y Archivos</h2>
+                <div class="items-list"></div>
+                <div class="add-section">
+                    <input type="text" class="add-name" placeholder="Nombre del enlace">
+                    <input type="text" class="add-url" placeholder="URL o archivo.html">
+                    <button class="add-submit">+</button>
+                </div>
+            </div>
+
+            <div class="card" id="notas">
+                <h2>Notas</h2>
+                <div class="items-list"></div>
+                <div class="add-section">
+                    <input type="text" class="add-name" placeholder="Nueva nota">
+                    <input type="text" class="add-url" placeholder="URL (opcional)">
+                    <button class="add-submit">+</button>
+                </div>
+            </div>
+        </aside>
+
+        <section class="viewer-container">
+            <iframe name="viewer" src="about:blank"></iframe>
+        </section>
+    </div>
+
+    <footer>
+        Personal Dashboard © 2026
+    </footer>
+
+    <script>
+        // Cargar ítems
+        function loadItems(cardId) {
+            const list = document.querySelector(`#${cardId} .items-list`);
+            const data = JSON.parse(localStorage.getItem(cardId) || '[]');
+            list.innerHTML = '';
+            data.forEach(item => addItemToList(cardId, item.text, item.url));
+        }
+
+        // Guardar ítems
+        function saveItems(cardId) {
+            const items = Array.from(document.querySelectorAll(`#${cardId} .item`)).map(itemEl => {
+                const a = itemEl.querySelector('a');
+                const span = itemEl.querySelector('span');
+                return a ? {text: a.textContent, url: a.href} : {text: span.textContent, url: ''};
+            });
+            localStorage.setItem(cardId, JSON.stringify(items));
+        }
+
+        // Agregar ítem
+        function addItemToList(cardId, text, url = '') {
+            const list = document.querySelector(`#${cardId} .items-list`);
+            const item = document.createElement('div');
+            item.className = 'item';
+
+            if (url) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.textContent = text;
+                if (url.startsWith('http')) {
+                    a.target = '_blank';
+                    a.rel = 'noopener';
+                } else {
+                    a.target = 'viewer';
+                }
+                item.appendChild(a);
+            } else {
+                const span = document.createElement('span');
+                span.textContent = text;
+                item.appendChild(span);
+            }
+
+            const del = document.createElement('span');
+            del.className = 'delete-btn';
+            del.textContent = '✕';
+            del.onclick = (e) => {
+                e.stopPropagation();
+                item.remove();
+                saveItems(cardId);
+            };
+            item.appendChild(del);
+
+            list.appendChild(item);
+        }
+
+        // Botones agregar
+        document.querySelectorAll('.add-submit').forEach(btn => {
+            btn.onclick = () => {
+                const section = btn.parentElement;
+                const card = section.parentElement;
+                const cardId = card.id;
+                const nameInput = section.querySelector('.add-name');
+                const urlInput = section.querySelector('.add-url');
+                const text = nameInput.value.trim();
+                const url = urlInput.value.trim();
+                if (!text) return;
+                addItemToList(cardId, text, url);
+                saveItems(cardId);
+                nameInput.value = '';
+                urlInput.value = '';
+            };
+        });
+
+        // Enter para agregar
+        document.querySelectorAll('.add-name, .add-url').forEach(input => {
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.closest('.add-section').querySelector('.add-submit').click();
+                }
+            });
+        });
+
+        // Cargar todo
+        ['proyectos', 'tareas', 'enlaces', 'notas'].forEach(loadItems);
+
+        // Búsqueda
+        const searchInput = document.getElementById('search');
+        searchInput.addEventListener('input', () => {
+            const term = searchInput.value.toLowerCase();
+            document.querySelectorAll('.item').forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(term) ? 'flex' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>
