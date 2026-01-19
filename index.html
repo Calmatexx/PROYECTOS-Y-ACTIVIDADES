@@ -1,139 +1,242 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Visor HTML Personal</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-<style>
-  body { font-family: Arial; padding: 20px; background: #f0f0f0; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-  iframe { width: 100%; height: 80vh; border: 1px solid #aaa; margin-top: 30px; }
-  .input-group { margin: 10px 0; }
-  h2 { margin-top: 40px; }
-  button { margin: 5px; }
-</style>
+  <meta charset="UTF-8">
+  <title>Gestor de Archivos y Enlaces</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      background: #f5f5f5;
+    }
+
+    .sidebar {
+      width: 280px;
+      background: #1f2937;
+      color: white;
+      padding: 15px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .sidebar h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .sidebar input, .sidebar button {
+      width: 100%;
+      margin-bottom: 8px;
+      padding: 6px;
+      border-radius: 4px;
+      border: none;
+    }
+
+    .sidebar button {
+      background: #3b82f6;
+      color: white;
+      cursor: pointer;
+    }
+
+    .sidebar button:hover {
+      background: #2563eb;
+    }
+
+    .item {
+      background: #374151;
+      margin-bottom: 6px;
+      padding: 6px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .item span {
+      cursor: pointer;
+      color: #93c5fd;
+      text-decoration: underline;
+      flex: 1;
+    }
+
+    .item span:hover {
+      color: white;
+    }
+
+    .item button {
+      background: red;
+      font-size: 11px;
+      padding: 2px 6px;
+    }
+
+    .main {
+      flex: 1;
+      background: white;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      background: #111827;
+      color: white;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    iframe, .viewer {
+      flex: 1;
+      border: none;
+      width: 100%;
+    }
+
+    .placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+      font-size: 18px;
+    }
+  </style>
 </head>
 <body>
-<h1>Visor HTML con Animaciones</h1>
-<p>Sube tus archivos HTML locales. También tienes generadores predefinidos.</p>
 
-<div class="input-group">
-  <input type="text" id="nombre" placeholder="Nombre del proyecto" style="width:300px;">
-</div>
-<div class="input-group">
-  <input type="file" id="archivo" accept=".html">
-</div>
-<button onclick="agregar()">Guardar</button>
+  <div class="sidebar">
+    <h2>📁 Subir archivo</h2>
+    <input type="file" id="fileInput">
+    <button onclick="addFile()">Agregar archivo</button>
 
-<h2>Generadores Predefinidos</h2>
-<table id="tabla-pre">
-<thead><tr><th>Nombre</th><th>Acciones</th></tr></thead>
-<tbody></tbody>
-</table>
+    <h2>🌐 Agregar enlace</h2>
+    <input type="text" id="linkName" placeholder="Nombre del enlace">
+    <input type="text" id="linkURL" placeholder="https://ejemplo.com">
+    <button onclick="addLink()">Agregar enlace</button>
 
-<h2>Mis Archivos Subidos</h2>
-<table id="tabla-upload">
-<thead><tr><th>Nombre</th><th>Acciones</th></tr></thead>
-<tbody></tbody>
-</table>
+    <h2>📌 Elementos</h2>
+    <div id="items"></div>
+  </div>
 
-<iframe id="vista"></iframe>
+  <div class="main">
+    <div class="topbar">
+      <span id="currentTitle">Nada abierto</span>
+      <button onclick="clearViewer()">Cerrar</button>
+    </div>
+
+    <div id="viewer" class="placeholder">Selecciona un archivo o enlace</div>
+  </div>
 
 <script>
-let items = JSON.parse(localStorage.getItem('htmlItems') || '[]');
+  const itemsDiv = document.getElementById("items");
+  const viewer = document.getElementById("viewer");
+  const currentTitle = document.getElementById("currentTitle");
 
-const predefined = [
-  { nombre: "GENERADOR 1", url: "https://youtu.be/4DO8GsIYfhQ?si=4jF84r166qJ6znZL" },
-  // Agrega más generadores aquí si tienes los links:
-  // { nombre: "GENERADOR 2", url: "https://tu-link-aqui.com" },
-  // { nombre: "GENERADOR 3", url: "https://tu-link-aqui.com" },
-];
+  function addFile() {
+    const input = document.getElementById("fileInput");
+    if (!input.files.length) return;
 
-function renderPredefined() {
-  const tbody = document.querySelector('#tabla-pre tbody');
-  tbody.innerHTML = '';
-  predefined.forEach((item, i) => {
-    const tr = document.createElement('tr');
-    tr.className = 'animate__animated animate__fadeIn';
-    tr.innerHTML = `
-      <td>${item.nombre}</td>
-      <td>
-        <button onclick="verPre(${i})">Ver aquí</button>
-        <button onclick="abrirNuevaPre(${i})">Nueva pestaña</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
+    const file = input.files[0];
+    const url = URL.createObjectURL(file);
 
-function renderUploaded() {
-  const tbody = document.querySelector('#tabla-upload tbody');
-  tbody.innerHTML = '';
-  items.forEach((item, i) => {
-    const tr = document.createElement('tr');
-    tr.className = 'animate__animated animate__fadeIn';
-    tr.innerHTML = `
-      <td>${item.nombre}</td>
-      <td>
-        <button onclick="verLocal(${i})">Ver aquí</button>
-        <button onclick="abrirNuevaLocal(${i})">Nueva pestaña</button>
-        <button onclick="borrar(${i})">Borrar</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
+    const item = document.createElement("div");
+    item.className = "item";
 
-function limpiarInputs() {
-  document.getElementById('nombre').value = '';
-  document.getElementById('archivo').value = '';
-}
+    const span = document.createElement("span");
+    span.textContent = file.name;
+    span.onclick = () => openContent(file.name, url, file.type);
 
-function agregar() {
-  const nombre = document.getElementById('nombre').value.trim() || 'Sin nombre';
-  const file = document.getElementById('archivo').files[0];
-  if (!file) return alert('Selecciona un archivo HTML');
-  
-  const reader = new FileReader();
-  reader.onload = e => {
-    items.push({nombre, contenido: e.target.result});
-    localStorage.setItem('htmlItems', JSON.stringify(items));
-    renderUploaded();
-    limpiarInputs();
-  };
-  reader.readAsText(file);
-}
+    const del = document.createElement("button");
+    del.textContent = "X";
+    del.onclick = () => item.remove();
 
-function verPre(i) {
-  const iframe = document.getElementById('vista');
-  iframe.srcdoc = '';
-  iframe.src = predefined[i].url || '';
-}
+    item.appendChild(span);
+    item.appendChild(del);
+    itemsDiv.appendChild(item);
 
-function abrirNuevaPre(i) {
-  if (predefined[i].url) window.open(predefined[i].url, '_blank');
-}
+    input.value = "";
+  }
 
-function verLocal(i) {
-  const iframe = document.getElementById('vista');
-  iframe.src = '';
-  iframe.srcdoc = items[i].contenido;
-}
+  function addLink() {
+    const name = document.getElementById("linkName").value.trim();
+    const url = document.getElementById("linkURL").value.trim();
+    if (!name || !url) return;
 
-function abrirNuevaLocal(i) {
-  const blob = new Blob([items[i].contenido], {type: 'text/html'});
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-}
+    const item = document.createElement("div");
+    item.className = "item";
 
-function borrar(i) {
-  items.splice(i, 1);
-  localStorage.setItem('htmlItems', JSON.stringify(items));
-  renderUploaded();
-}
+    const span = document.createElement("span");
+    span.textContent = name;
+    span.onclick = () => openLink(name, url);
 
-renderPredefined();
-renderUploaded();
+    const del = document.createElement("button");
+    del.textContent = "X";
+    del.onclick = () => item.remove();
+
+    item.appendChild(span);
+    item.appendChild(del);
+    itemsDiv.appendChild(item);
+
+    document.getElementById("linkName").value = "";
+    document.getElementById("linkURL").value = "";
+  }
+
+  function openContent(title, url, type) {
+    currentTitle.textContent = title;
+
+    viewer.innerHTML = "";
+
+    if (type.startsWith("image/")) {
+      const img = document.createElement("img");
+      img.src = url;
+      img.style.maxWidth = "100%";
+      img.style.maxHeight = "100%";
+      img.style.margin = "auto";
+      viewer.appendChild(img);
+    } else if (type === "application/pdf") {
+      const iframe = document.createElement("iframe");
+      iframe.src = url;
+      viewer.replaceWith(iframe);
+      iframe.id = "viewer";
+    } else if (type.startsWith("video/")) {
+      const video = document.createElement("video");
+      video.src = url;
+      video.controls = true;
+      video.style.width = "100%";
+      video.style.height = "100%";
+      viewer.appendChild(video);
+    } else {
+      const iframe = document.createElement("iframe");
+      iframe.src = url;
+      viewer.replaceWith(iframe);
+      iframe.id = "viewer";
+    }
+  }
+
+  function openLink(title, url) {
+    currentTitle.textContent = title;
+
+    const iframe = document.createElement("iframe");
+    iframe.src = url;
+    iframe.id = "viewer";
+
+    const old = document.getElementById("viewer");
+    old.replaceWith(iframe);
+  }
+
+  function clearViewer() {
+    const old = document.getElementById("viewer");
+    const div = document.createElement("div");
+    div.id = "viewer";
+    div.className = "placeholder";
+    div.textContent = "Selecciona un archivo o enlace";
+    old.replaceWith(div);
+    currentTitle.textContent = "Nada abierto";
+  }
 </script>
+
 </body>
 </html>
-
