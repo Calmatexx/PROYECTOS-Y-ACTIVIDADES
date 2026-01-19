@@ -8,14 +8,15 @@
   body { font-family: Arial; padding: 20px; background: #f0f0f0; }
   table { width: 100%; border-collapse: collapse; margin-top: 20px; }
   th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-  iframe { width: 100%; height: 80vh; border: 1px solid #aaa; margin-top: 20px; }
+  iframe { width: 100%; height: 80vh; border: 1px solid #aaa; margin-top: 30px; }
   .input-group { margin: 10px 0; }
+  h2 { margin-top: 40px; }
   button { margin: 5px; }
 </style>
 </head>
 <body>
 <h1>Visor HTML con Animaciones</h1>
-<p>Ingresa un nombre y elige: subir archivo local o pegar URL de HTML.</p>
+<p>Sube tus archivos HTML locales. También tienes generadores predefinidos.</p>
 
 <div class="input-group">
   <input type="text" id="nombre" placeholder="Nombre del proyecto" style="width:300px;">
@@ -23,13 +24,17 @@
 <div class="input-group">
   <input type="file" id="archivo" accept=".html">
 </div>
-<div class="input-group">
-  <input type="url" id="enlace" placeholder="O pega URL de archivo HTML" style="width:400px;">
-</div>
 <button onclick="agregar()">Guardar</button>
 
-<table id="tabla">
-<thead><tr><th>Nombre</th><th>Tipo</th><th>Acciones</th></tr></thead>
+<h2>Generadores Predefinidos</h2>
+<table id="tabla-pre">
+<thead><tr><th>Nombre</th><th>Acciones</th></tr></thead>
+<tbody></tbody>
+</table>
+
+<h2>Mis Archivos Subidos</h2>
+<table id="tabla-upload">
+<thead><tr><th>Nombre</th><th>Acciones</th></tr></thead>
 <tbody></tbody>
 </table>
 
@@ -38,18 +43,40 @@
 <script>
 let items = JSON.parse(localStorage.getItem('htmlItems') || '[]');
 
-function render() {
-  const tbody = document.querySelector('#tabla tbody');
+const predefined = [
+  { nombre: "GENERADOR 1", url: "https://calmatexx.github.io/Gerador-criado-por-Calmatex/" },
+  // Agrega más generadores aquí si tienes los links:
+  // { nombre: "GENERADOR 2", url: "https://tu-link-aqui.com" },
+  // { nombre: "GENERADOR 3", url: "https://tu-link-aqui.com" },
+];
+
+function renderPredefined() {
+  const tbody = document.querySelector('#tabla-pre tbody');
+  tbody.innerHTML = '';
+  predefined.forEach((item, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'animate__animated animate__fadeIn';
+    tr.innerHTML = `
+      <td>${item.nombre}</td>
+      <td>
+        <button onclick="verPre(${i})">Ver aquí</button>
+        <button onclick="abrirNuevaPre(${i})">Nueva pestaña</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderUploaded() {
+  const tbody = document.querySelector('#tabla-upload tbody');
   tbody.innerHTML = '';
   items.forEach((item, i) => {
     const tr = document.createElement('tr');
-    tr.className = 'item animate__animated animate__fadeIn';
+    tr.className = 'animate__animated animate__fadeIn';
     tr.innerHTML = `
       <td>${item.nombre}</td>
-      <td>${item.tipo === 'local' ? 'Guardado localmente' : 'URL externa'}</td>
       <td>
-        <button onclick="ver(${i})">Ver aquí</button>
-        <button onclick="abrirNueva(${i})">Nueva pestaña</button>
+        <button onclick="verLocal(${i})">Ver aquí</button>
+        <button onclick="abrirNuevaLocal(${i})">Nueva pestaña</button>
         <button onclick="borrar(${i})">Borrar</button>
       </td>`;
     tbody.appendChild(tr);
@@ -59,85 +86,53 @@ function render() {
 function limpiarInputs() {
   document.getElementById('nombre').value = '';
   document.getElementById('archivo').value = '';
-  document.getElementById('enlace').value = '';
-}
-
-function saveAndRender() {
-  localStorage.setItem('htmlItems', JSON.stringify(items));
-  render();
-  limpiarInputs();
 }
 
 function agregar() {
   const nombre = document.getElementById('nombre').value.trim() || 'Sin nombre';
   const file = document.getElementById('archivo').files[0];
-  let urlInput = document.getElementById('enlace').value.trim();
-
-  if (file && urlInput) {
-    alert('Elige solo archivo o URL');
-    return;
-  }
-  if (!file && !urlInput) {
-    alert('Selecciona archivo o ingresa URL');
-    return;
-  }
-
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      items.push({nombre, tipo: 'local', contenido: e.target.result});
-      saveAndRender();
-    };
-    reader.readAsText(file);
-  } else {
-    let url = urlInput;
-    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-
-    fetch(url)
-      .then(response => {
-        if (!response.ok) throw new Error('No OK');
-        return response.text();
-      })
-      .then(text => {
-        items.push({nombre, tipo: 'local', contenido: text});
-        saveAndRender();
-      })
-      .catch(() => {
-        items.push({nombre, tipo: 'url', url: url});
-        saveAndRender();
-      });
-  }
+  if (!file) return alert('Selecciona un archivo HTML');
+  
+  const reader = new FileReader();
+  reader.onload = e => {
+    items.push({nombre, contenido: e.target.result});
+    localStorage.setItem('htmlItems', JSON.stringify(items));
+    renderUploaded();
+    limpiarInputs();
+  };
+  reader.readAsText(file);
 }
 
-function ver(i) {
+function verPre(i) {
+  const iframe = document.getElementById('vista');
+  iframe.srcdoc = '';
+  iframe.src = predefined[i].url || '';
+}
+
+function abrirNuevaPre(i) {
+  if (predefined[i].url) window.open(predefined[i].url, '_blank');
+}
+
+function verLocal(i) {
   const iframe = document.getElementById('vista');
   iframe.src = '';
-  iframe.srcdoc = '';
-  const item = items[i];
-  if (item.tipo === 'local') {
-    iframe.srcdoc = item.contenido;
-  } else {
-    iframe.src = item.url;
-  }
+  iframe.srcdoc = items[i].contenido;
 }
 
-function abrirNueva(i) {
-  const item = items[i];
-  if (item.tipo === 'local') {
-    const blob = new Blob([item.contenido], {type: 'text/html;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-  } else {
-    window.open(item.url, '_blank');
-  }
+function abrirNuevaLocal(i) {
+  const blob = new Blob([items[i].contenido], {type: 'text/html'});
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
 }
 
 function borrar(i) {
   items.splice(i, 1);
-  saveAndRender();
+  localStorage.setItem('htmlItems', JSON.stringify(items));
+  renderUploaded();
 }
 
-render();
+renderPredefined();
+renderUploaded();
 </script>
 </body>
 </html>
