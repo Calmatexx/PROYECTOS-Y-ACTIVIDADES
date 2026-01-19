@@ -8,14 +8,14 @@
   body { font-family: Arial; padding: 20px; background: #f0f0f0; }
   table { width: 100%; border-collapse: collapse; margin-top: 20px; }
   th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-  iframe { width: 100%; height: 80vh; border: 1px solid #aaa; }
-  .item { animation: fadeIn 0.5s; }
+  iframe { width: 100%; height: 80vh; border: 1px solid #aaa; margin-top: 20px; }
   .input-group { margin: 10px 0; }
+  button { margin: 5px; }
 </style>
 </head>
 <body>
 <h1>Visor HTML con Animaciones</h1>
-<p>Ingresa un nombre y elige: subir archivo local o pegar URL de un HTML.</p>
+<p>Ingresa un nombre y elige: subir archivo local o pegar URL de HTML.</p>
 
 <div class="input-group">
   <input type="text" id="nombre" placeholder="Nombre del proyecto" style="width:300px;">
@@ -26,7 +26,7 @@
 <div class="input-group">
   <input type="url" id="enlace" placeholder="O pega URL de archivo HTML" style="width:400px;">
 </div>
-<button onclick="agregar()">Subir y Guardar</button>
+<button onclick="agregar()">Guardar</button>
 
 <table id="tabla">
 <thead><tr><th>Nombre</th><th>Tipo</th><th>Acciones</th></tr></thead>
@@ -44,39 +44,16 @@ function render() {
   items.forEach((item, i) => {
     const tr = document.createElement('tr');
     tr.className = 'item animate__animated animate__fadeIn';
-    tr.innerHTML = `<td>${item.nombre}</td>
-    <td>${item.tipo === 'local' ? 'Archivo local' : 'URL'}</td>
-    <td><button onclick="ver(${i})">Ver</button>
-    <button onclick="borrar(${i})">Borrar</button></td>`;
+    tr.innerHTML = `
+      <td>${item.nombre}</td>
+      <td>${item.tipo === 'local' ? 'Guardado localmente' : 'URL externa'}</td>
+      <td>
+        <button onclick="ver(${i})">Ver aquí</button>
+        <button onclick="abrirNueva(${i})">Nueva pestaña</button>
+        <button onclick="borrar(${i})">Borrar</button>
+      </td>`;
     tbody.appendChild(tr);
   });
-}
-
-function agregar() {
-  let nombre = document.getElementById('nombre').value.trim() || 'Sin nombre';
-  const file = document.getElementById('archivo').files[0];
-  let urlInput = document.getElementById('enlace').value.trim();
-
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      items.push({nombre, tipo: 'local', contenido: e.target.result});
-      localStorage.setItem('htmlItems', JSON.stringify(items));
-      limpiarInputs();
-      render();
-    };
-    reader.readAsText(file);
-  } else if (urlInput) {
-    if (!/^https?:\/\//i.test(urlInput)) {
-      urlInput = 'https://' + urlInput;
-    }
-    items.push({nombre, tipo: 'url', url: urlInput});
-    localStorage.setItem('htmlItems', JSON.stringify(items));
-    limpiarInputs();
-    render();
-  } else {
-    alert('Selecciona un archivo o ingresa una URL');
-  }
 }
 
 function limpiarInputs() {
@@ -85,22 +62,79 @@ function limpiarInputs() {
   document.getElementById('enlace').value = '';
 }
 
+function saveAndRender() {
+  localStorage.setItem('htmlItems', JSON.stringify(items));
+  render();
+  limpiarInputs();
+}
+
+function agregar() {
+  const nombre = document.getElementById('nombre').value.trim() || 'Sin nombre';
+  const file = document.getElementById('archivo').files[0];
+  let urlInput = document.getElementById('enlace').value.trim();
+
+  if (file && urlInput) {
+    alert('Elige solo archivo o URL');
+    return;
+  }
+  if (!file && !urlInput) {
+    alert('Selecciona archivo o ingresa URL');
+    return;
+  }
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      items.push({nombre, tipo: 'local', contenido: e.target.result});
+      saveAndRender();
+    };
+    reader.readAsText(file);
+  } else {
+    let url = urlInput;
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) throw new Error('No OK');
+        return response.text();
+      })
+      .then(text => {
+        items.push({nombre, tipo: 'local', contenido: text});
+        saveAndRender();
+      })
+      .catch(() => {
+        items.push({nombre, tipo: 'url', url: url});
+        saveAndRender();
+      });
+  }
+}
+
 function ver(i) {
   const iframe = document.getElementById('vista');
+  iframe.src = '';
+  iframe.srcdoc = '';
   const item = items[i];
   if (item.tipo === 'local') {
     iframe.srcdoc = item.contenido;
-    iframe.src = '';
   } else {
     iframe.src = item.url;
-    iframe.srcdoc = '';
+  }
+}
+
+function abrirNueva(i) {
+  const item = items[i];
+  if (item.tipo === 'local') {
+    const blob = new Blob([item.contenido], {type: 'text/html;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  } else {
+    window.open(item.url, '_blank');
   }
 }
 
 function borrar(i) {
   items.splice(i, 1);
-  localStorage.setItem('htmlItems', JSON.stringify(items));
-  render();
+  saveAndRender();
 }
 
 render();
